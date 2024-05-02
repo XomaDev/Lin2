@@ -5,9 +5,9 @@ My algorithm that is based on "philosophy of breaking complex things into smalle
 <br>
 
 This project takes in a large data set of 28x28 images, then emits compiled comparable model files.<br>
-Minst dataset is taken as a prime example in this repository, that contains a large 28x28 data of 0-9 numbers.
+Mnist dataset is taken as a prime example in this repository, that contains a large 28x28 data of 0-9 numbers.
 
-After compiling the Minst dataset into models, we use the compare feature to effectively mimic a small OCR. (Thus its also some kind of ML)
+After compiling the Mnist dataset into models, we use the compare feature to effectively mimic a small OCR. (Thus its also some kind of ML)
 
 ## For instance, a test image (i created):
 
