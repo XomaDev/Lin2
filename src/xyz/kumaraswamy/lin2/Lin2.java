@@ -1,22 +1,18 @@
 package xyz.kumaraswamy.lin2;
 
+import xyz.kumaraswamy.lin2.structs.Prediction;
+import xyz.kumaraswamy.lin2.structs.Result;
+
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class Lin2 {
-  public static List<char[]> bitImages(File[] images) throws IOException {
-    List<char[]> bitResults = new ArrayList<>();
-    for (File imageFile : images) {
-      char[] bits = getBits(imageFile);
-      bitResults.add(bits);
-    }
-    return bitResults;
-  }
 
   public static char[] getBits(File imageFile) throws IOException {
     BufferedImage image = ImageIO.read(imageFile);
@@ -32,5 +28,27 @@ public class Lin2 {
       }
     }
     return bits;
+  }
+
+  public static List<Result> predict(Model[] models, char[] data) {
+    int numberOfModels = models.length;
+    List<Result> predictions = new ArrayList<>(numberOfModels);
+
+    for (int i = 0, length = models.length; i < length; i++) {
+      System.out.println("Running permutation [" + i + "/" + length + "]");
+      Model model = models[i];
+      Prediction prediction = model.compare(data);
+
+      predictions.add(new Result(
+          1 - (double) prediction.data / prediction.matched.length,
+          prediction.data,
+          prediction.groupName,
+          prediction.name,
+          prediction.matched
+      ));
+    }
+
+    predictions.sort((o1, o2) -> Integer.compare(o1.leastDistance, o2.leastDistance));
+    return predictions;
   }
 }

@@ -1,37 +1,44 @@
 package xyz.kumaraswamy.lin2;
 
+import xyz.kumaraswamy.lin2.structs.Result;
+
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
 public class Main {
-  public static void main(String[] args) throws IOException {
-    // the number 2
-    // char[] test = Lin2.getBits(new File("/home/kumaraswamy/Mlemon/Lin2/testing/two.png"));
-    // char[] test = Lin2.getBits(new File("/home/kumaraswamy/Mlemon/Lin2/testing/five.png"));
-   //  char[] test = Lin2.getBits(new File("/home/kumaraswamy/Mlemon/Lin2/testing/nine.png"));
-    char[] test = Lin2.getBits(new File("/home/kumaraswamy/Mlemon/Lin2/testing/Six1.png"));
 
-    File[] train = new File("/home/kumaraswamy/Mlemon/Lin2/train").listFiles();
-    for (File trainSet : train) {
-      String setName = trainSet.getName();
-      int leastDistance = Integer.MAX_VALUE;
-      char[] leastDistanceChars = null;
-      File leastDistanceMatch = null;
-      for (File image : trainSet.listFiles()) {
-        char[] bits = Lin2.getBits(image);
-        int distance = DistanceAlgorithm.dist(bits, test);
-        if (leastDistance > distance) {
-          leastDistanceChars = bits;
-          leastDistance = distance;
-          leastDistanceMatch = image;
-        }
+  private static final File ROOT = new File(System.getProperty("user.dir"));
+  private static final File TRAINING_ROOT = new File(ROOT, "/train");
+  private static final File COMPILED_ROOT = new File(ROOT, "/compiled");
+
+  public static void main(String[] args) throws IOException {
+    // compileModels();
+    char[] test = Lin2.getBits(new File("/home/kumaraswamy/Mlemon/Lin2/test/four.png"));
+    System.out.println("Test Data: " + new String(test));
+    System.out.println("Length: " + test.length);
+
+    List<Result> results = Lin2.predict(Model.loadModels(COMPILED_ROOT.listFiles()), test);
+
+    for (Result result : results) {
+      System.out.println("Group (" + result.group + ")");
+      System.out.println("\t Accuracy (" + result.accuracy + ")");
+      System.out.println("\t LeastDistance (" + result.leastDistance + ")");
+      System.out.println("\t Percentage (" + (int) (result.accuracy * 100) + "%)\n");
+    }
+  }
+
+  private static void compileModels() throws IOException {
+    File[] trainingModules = TRAINING_ROOT.listFiles();
+    for (File moduleDir : trainingModules) {
+      String moduleName = moduleDir.getName();
+      File outputModuleFile = new File(COMPILED_ROOT, moduleName);
+
+      File[] moduleImages = moduleDir.listFiles();
+      try (FileOutputStream fileOutput = new FileOutputStream(outputModuleFile)) {
+        Model.compileModel(moduleName, moduleImages, fileOutput);
       }
-      System.out.println(setName);
-      System.out.println("\t Least Distance: " + leastDistance);
-      System.out.println("\t File: " + leastDistanceMatch.getAbsolutePath());
-      System.out.println("\t Comparison: " + new String(test));
-      System.out.println("\t With: " + new String(leastDistanceChars));
     }
   }
 }
