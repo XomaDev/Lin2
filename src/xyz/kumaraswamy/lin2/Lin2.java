@@ -9,8 +9,12 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Lin2 {
 
@@ -32,23 +36,40 @@ public class Lin2 {
 
   public static List<Result> predict(Model[] models, char[] data) {
     int numberOfModels = models.length;
-    List<Result> predictions = new ArrayList<>(numberOfModels);
+    List<Result> predictions = Collections.synchronizedList(new ArrayList<>(numberOfModels));
+    ExecutorService executor = Executors.newFixedThreadPool(numberOfModels);
+    CountDownLatch latch = new CountDownLatch(numberOfModels);
 
     for (int i = 0, length = models.length; i < length; i++) {
-      System.out.println("Running permutation [" + i + "/" + length + "]");
-      Model model = models[i];
-      Prediction prediction = model.compare(data);
-
-      predictions.add(new Result(
-          1 - (double) prediction.data / prediction.matched.length,
-          prediction.data,
-          prediction.groupName,
-          prediction.name,
-          prediction.matched
-      ));
+      int finalI = i;
+      executor.submit(() -> {
+        try {
+          System.out.println("Parallel permutation [" + finalI + "/" + length + "]");
+          Result result = predictResult(data, models[finalI]);
+          predictions.add(result);
+        } finally {
+          latch.countDown();
+        }
+      });
     }
-
-    predictions.sort((o1, o2) -> Integer.compare(o1.leastDistance, o2.leastDistance));
+    executor.shutdown();
+    try {
+      latch.await();
+      predictions.sort(Comparator.comparingInt(o -> o.leastDistance));
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
     return predictions;
+  }
+
+  private static Result predictResult(char[] data, Model model) {
+    Prediction prediction = model.compare(data);
+    return new Result(
+        1 - (double) prediction.data / prediction.matched.length,
+        prediction.data,
+        prediction.groupName,
+        prediction.name,
+        prediction.matched
+    );
   }
 }
